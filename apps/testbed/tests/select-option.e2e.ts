@@ -9,19 +9,17 @@
  * - should select single option by handle: no element handles.
  * - should select single option by multiple attributes: `selectOption` takes one of label, value, or index.
  * - should not select single option when some attributes do not match: `selectOption` takes one of label, value, or index.
- * - should select only first option: `selectOption` takes one option, no arrays.
- * - should select multiple options: `selectOption` takes one option, no arrays.
- * - should select multiple options with attributes: `selectOption` takes one option, no arrays.
- * - should return [] on no matched values: `selectOption` returns nothing and takes no arrays.
- * - should return an array of matched values: `selectOption` returns nothing and takes no arrays.
- * - should return an array of one element when multiple is not set: `selectOption` returns nothing and takes no arrays.
- * - should return [] on no values: `selectOption` returns nothing and takes no arrays.
- * - should not allow null items: no arrays or null.
- * - should unselect with null: no arrays or null.
- * - should deselect all options when passed no values for a multiple select: no arrays.
- * - should deselect all options when passed no values for a select without multiple: no arrays.
+ * - should select only first option: single-select array behavior is not covered by this port.
+ * - should return [] on no matched values: the public API returns void, unlike Playwright's returned values.
+ * - should return an array of matched values: the public API returns void, unlike Playwright's returned values.
+ * - should return an array of one element when multiple is not set: the public API returns void, unlike Playwright's returned values.
+ * - should return [] on no values: the public API returns void, unlike Playwright's returned values.
+ * - should not allow null items: null is not part of the typed option shape.
+ * - should unselect with null: null is not supported; use an empty array to clear a multi-select.
+ * - should deselect all options when passed no values for a multiple select: use an empty array instead.
+ * - should deselect all options when passed no values for a select without multiple: the no-argument overload is not supported.
  * - should throw if passed wrong types: asserts Playwright's protocol validator messages; the option is typed.
- * - should wait for multiple options to be present: `selectOption` takes one option, no arrays.
+ * - should wait for multiple options to be present: array waiting is not covered by this port.
  * - should select single option: a bare string selects by label only on purpose, where Playwright matches the value or the label.
  */
 
@@ -36,6 +34,52 @@ const giveItAChanceToResolve = '() => new Promise((resolve) => { let frames = 0;
 const addScarlet = "() => { const option = document.createElement('option'); option.value = 'scarlet'; option.textContent = 'Scarlet'; document.querySelector('select').appendChild(option); }";
 
 test.describe('page select option', { requires: ['browser'], tags: ['playwright'] }, () => {
+  test('should select multiple options by label', async ({ browser }) => {
+    await browser.goto(content(`
+      <select multiple>
+        <option value="apples">Apples</option>
+        <option value="pears">Pears</option>
+        <option value="plums">Plums</option>
+      </select>
+    `));
+    const select = browser.locator('select');
+    await select.selectOption([{ label: 'Apples' }, { label: 'Pears' }]);
+    expect(
+      await browser.evaluate('() => Array.from(document.querySelector("select").selectedOptions, (option) => option.value)'),
+    ).toEqual(['apples', 'pears']);
+    await select.selectOption([]);
+    expect(
+      await browser.evaluate('() => Array.from(document.querySelector("select").selectedOptions, (option) => option.value)'),
+    ).toEqual([]);
+  });
+
+  test('should select multiple options by value and index', async ({ browser }) => {
+    await browser.goto(content(`
+      <select multiple>
+        <option value="apple-id">Apples</option>
+        <option value="pear-id">Pears</option>
+        <option value="plum-id">Plums</option>
+      </select>
+    `));
+    await browser.locator('select').selectOption([{ value: 'apple-id' }, { index: 2 }]);
+    expect(
+      await browser.evaluate('() => Array.from(document.querySelector("select").selectedOptions, (option) => option.value)'),
+    ).toEqual(['apple-id', 'plum-id']);
+  });
+
+  test('bare strings in an option array still match labels', async ({ browser }) => {
+    await browser.goto(content(`
+      <select multiple>
+        <option value="apple-id">Apples</option>
+        <option value="pear-id">Pears</option>
+      </select>
+    `));
+    await browser.locator('select').selectOption(['Apples', 'Pears']);
+    expect(
+      await browser.evaluate('() => Array.from(document.querySelector("select").selectedOptions, (option) => option.value)'),
+    ).toEqual(['apple-id', 'pear-id']);
+  });
+
   test('should select single option by value', async ({ browser }) => {
     await browser.goto('/input/select.html');
     await browser.locator('select').selectOption({ value: 'blue' });

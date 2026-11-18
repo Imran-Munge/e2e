@@ -510,7 +510,7 @@ class LocatorImpl extends ScreenImpl implements Locator {
     return this.perform('uncheck', { kind: 'uncheck' }, options);
   }
 
-  async selectOption(value: SelectOption, options?: ActionOptions): Promise<void> {
+  async selectOption(value: SelectOption | readonly SelectOption[], options?: ActionOptions): Promise<void> {
     requireSelectOption(value);
     await this.perform('selectOption', { kind: 'selectOption', value }, options);
   }
@@ -715,24 +715,31 @@ function requirePoint(point: Point | undefined, what: string): Point {
 }
 
 /**
- * Refuses a `selectOption` value that is not one option: a label string or an
- * object with exactly one of `label`, `value`, or a nonnegative integer
- * `index`. An engine maps the value field by field, so an array or a
- * mixed object would select an option the test did not name.
+ * Accepts a label string or an object naming exactly one of `label`,
+ * `value`, or a nonnegative integer `index`.
  */
+function isSelectOption(value: unknown): value is SelectOption {
+  if (typeof value === 'string') return true;
+  if (!isPlainObject(value) || Object.getOwnPropertyNames(value).length !== 1) return false;
+  const { label, value: attribute, index } = value;
+  return typeof label === 'string' || typeof attribute === 'string' ||
+    (typeof index === 'number' && Number.isInteger(index) && index >= 0);
+}
+
+/** Validates one option or an array of options before the engine acts. */
 function requireSelectOption(value: unknown): void {
   if (Array.isArray(value)) {
-    throw new TestError(
-      'INVALID_ARGUMENT',
-      'selectOption takes one option per call; an array of options is not supported',
-    );
+    for (const option of value) {
+      if (!isSelectOption(option)) {
+        throw new TestError(
+          'INVALID_ARGUMENT',
+          'selectOption arrays must contain only a label string or exactly one of { label }, { value }, { index } with a nonnegative integer index',
+        );
+      }
+    }
+    return;
   }
-  if (typeof value === 'string') return;
-  if (isPlainObject(value) && Object.getOwnPropertyNames(value).length === 1) {
-    const { label, value: attribute, index } = value;
-    if (typeof label === 'string' || typeof attribute === 'string') return;
-    if (typeof index === 'number' && Number.isInteger(index) && index >= 0) return;
-  }
+  if (isSelectOption(value)) return;
   throw new TestError(
     'INVALID_ARGUMENT',
     'selectOption takes a label string or exactly one of { label }, { value }, { index } with a nonnegative integer index',

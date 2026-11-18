@@ -290,7 +290,7 @@ export type LocatorAction =
   | { readonly kind: 'longPress'; readonly durationMs?: number }
   | { readonly kind: 'fill'; readonly value: string; readonly sensitive: boolean }
   | { readonly kind: 'press'; readonly key: Key }
-  | { readonly kind: 'selectOption'; readonly value: SelectOption }
+  | { readonly kind: 'selectOption'; readonly value: SelectOption | readonly SelectOption[] }
   | { readonly kind: 'setInputFiles'; readonly paths: readonly string[] }
   | { readonly kind: 'dragTo'; readonly target: NodeRef }
   | {

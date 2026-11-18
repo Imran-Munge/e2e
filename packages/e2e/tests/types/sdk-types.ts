@@ -611,6 +611,11 @@ test('gap', { fail: 'known gap' }, async () => {});
 // @ts-expect-error a group cannot expect failure; mark each test
 test.describe('gaps', { fail: true }, () => {});
 void screen.getByLabel('Plan').selectOption({ value: 'pro' });
+void screen.getByLabel('Fruits').selectOption([{ label: 'Apples' }, { label: 'Pears' }]);
+void screen.getByLabel('Fruits').selectOption(['Apples', 'Pears']);
+void screen.getByLabel('Fruits').selectOption([]);
+// @ts-expect-error option objects still name exactly one of label, value, or index
+void screen.getByLabel('Fruits').selectOption([{ label: 'Apples', value: 'apples' }]);
 // @ts-expect-error one of label, value, or index, never two
 void screen.getByLabel('Plan').selectOption({ value: 'pro', index: 1 });
 // @ts-expect-error role queries never match hidden nodes; visible is the one visibility knob

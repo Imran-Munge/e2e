@@ -1,7 +1,7 @@
 /** Locator action dispatch for the Playwright engine. */
 
 import type { ElementHandle, Page } from 'playwright-core';
-import { Deadline, EngineError, pollCondition, type KeyModifier, type LocatorAction, type NodeRef, type PointerAction, type ViewportPoint } from '@e2e-dev/core/engine';
+import { Deadline, EngineError, pollCondition, type KeyModifier, type LocatorAction, type NodeRef, type PointerAction, type SelectOption, type ViewportPoint } from '@e2e-dev/core/engine';
 import {
   asActionable,
   isClassified,
@@ -26,6 +26,18 @@ const DEFAULT_LONG_PRESS_MS = 500;
 /** The keys a click holds, as Playwright's `modifiers` takes them; the contract spells them the same. */
 function heldKeys(action: Extract<LocatorAction, { kind: 'tap' | 'doubleTap' | 'secondaryTap' }>): { modifiers?: KeyModifier[] } {
   return action.modifiers === undefined ? {} : { modifiers: [...action.modifiers] };
+}
+
+/** Maps the platform-neutral option shape to Playwright's locator API. */
+function toPlaywrightSelectOption(option: SelectOption) {
+  if (typeof option === 'string') return { label: option };
+  if (option.index !== undefined) return { index: option.index };
+  if (option.value !== undefined) return { value: option.value };
+  return { label: option.label };
+}
+
+function isSelectOptionArray(value: SelectOption | readonly SelectOption[]): value is readonly SelectOption[] {
+  return Array.isArray(value);
 }
 
 /** Playwright's words for an element handle whose element left the DOM. */
@@ -325,15 +337,10 @@ export async function dispatchLocatorAction(
       return;
     case 'selectOption': {
       const value = action.value;
-      if (typeof value === 'string') {
-        await locator.selectOption({ label: value }, { timeout });
-      } else if (value.index !== undefined) {
-        await locator.selectOption({ index: value.index }, { timeout });
-      } else if (value.value !== undefined) {
-        await locator.selectOption({ value: value.value }, { timeout });
-      } else {
-        await locator.selectOption({ label: value.label }, { timeout });
-      }
+      const selected = isSelectOptionArray(value)
+        ? value.map(toPlaywrightSelectOption)
+        : toPlaywrightSelectOption(value);
+      await locator.selectOption(selected, { timeout });
       return;
     }
     case 'setInputFiles':

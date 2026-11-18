@@ -39,11 +39,26 @@ describe('locator.selectOption shape', () => {
     expect(performed).toEqual([{ kind: 'selectOption', value }]);
   });
 
-  it('rejects an array of options before the engine acts', async () => {
+  it('hands an array of options to the engine unchanged', async () => {
     const { select, performed } = selectScreen();
-    await expect(select.selectOption(invalid<SelectOption>(['daily', 'weekly']))).rejects.toMatchObject({
+    const value = [{ label: 'Apples' }, { label: 'Pears' }] as const;
+    await select.selectOption(value);
+    expect(performed).toEqual([{ kind: 'selectOption', value }]);
+  });
+
+  it('allows an empty array to clear a multi-select', async () => {
+    const { select, performed } = selectScreen();
+    await select.selectOption([]);
+    expect(performed).toEqual([{ kind: 'selectOption', value: [] }]);
+  });
+
+  it('rejects an array containing an invalid option before the engine acts', async () => {
+    const { select, performed } = selectScreen();
+    await expect(
+      select.selectOption(invalid<readonly SelectOption[]>([{ label: 'Daily', value: 'daily' }])),
+    ).rejects.toMatchObject({
       code: 'INVALID_ARGUMENT',
-      message: 'selectOption takes one option per call; an array of options is not supported',
+      message: 'selectOption arrays must contain only a label string or exactly one of { label }, { value }, { index } with a nonnegative integer index',
     });
     expect(performed).toEqual([]);
   });

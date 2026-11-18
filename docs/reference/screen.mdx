@@ -816,22 +816,25 @@ await screen.getByRole('checkbox', 'Remember me').uncheck();
 #### `selectOption`
 
 ```ts
-/** Selects one option from exactly one control. */
-selectOption(value: SelectOption, options?: ActionOptions): Promise<void>;
+/** Selects one or more options from exactly one control. */
+selectOption(value: SelectOption | readonly SelectOption[], options?: ActionOptions): Promise<void>;
 ```
 
 ```ts
 await screen.getByLabel('Plan').selectOption('Pro');
 await screen.getByLabel('Plan').selectOption({ label: 'Pro' });
 await screen.getByLabel('Plan').selectOption({ value: 'pro' });
+await screen.getByLabel('Fruits').selectOption([{ label: 'Apples' }, { label: 'Pears' }]);
 ```
 
 Pass a label string, or an object with exactly one of `label`, `value` (the
-value attribute, which the form submits), or `index` (zero-based).
+value attribute, which the form submits), or `index` (zero-based). Pass an
+array to select several options on a `<select multiple>` control; an empty
+array clears all selections. Bare strings inside an array still match labels only.
 
 | Throws | When |
 | --- | --- |
-| `INVALID_ARGUMENT` | More than one option per call: an array, or an object with more than one of those keys. Also a negative or fractional `index`. Thrown before the engine acts. |
+| `INVALID_ARGUMENT` | An option is not a label string or an object with exactly one of `label`, `value`, or a nonnegative integer `index`. Thrown before the engine acts. |
 
 #### `focus`
 

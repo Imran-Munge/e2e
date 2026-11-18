@@ -575,8 +575,8 @@ export interface Locator extends Omit<Screen, 'tree' | 'debug'> {
   check(options?: ActionOptions): Promise<void>;
   /** Unchecks exactly one node. */
   uncheck(options?: ActionOptions): Promise<void>;
-  /** Selects one option from exactly one control. */
-  selectOption(value: SelectOption, options?: ActionOptions): Promise<void>;
+  /** Selects one or more options from exactly one control. */
+  selectOption(value: SelectOption | readonly SelectOption[], options?: ActionOptions): Promise<void>;
   /** Focuses exactly one node. */
   focus(options?: ActionOptions): Promise<void>;
   /** Hovers over exactly one matching actionable node. */
